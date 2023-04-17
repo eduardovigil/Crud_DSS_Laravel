@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 
+/**
+ * Class EmployeeController
+ * @package App\Http\Controllers
+ */
 class EmployeeController extends Controller
 {
     /**
@@ -14,63 +18,92 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        $employee = Employee::all();
-        return \response($employee);
+        $employees = Employee::paginate();
+
+        return view('employee.index', compact('employees'))
+            ->with('i', (request()->input('page', 1) - 1) * $employees->perPage());
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $employee = new Employee();
+        return view('employee.create', compact('employee'));
     }
 
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre'=> 'required',
-            'apellido'=> 'required',
-            'edad'=> 'required',
-            'salario'=> 'required',
-        ]);
+        request()->validate(Employee::$rules);
+
         $employee = Employee::create($request->all());
 
-        return \response($employee);
+        return redirect()->route('employees.index')
+            ->with('success', 'Employee created successfully.');
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param  int $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
-        $employee = Employee::findOrFail($id);
-        return \response($employee);
+        $employee = Employee::find($id);
+
+        return view('employee.show', compact('employee'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $employee = Employee::find($id);
+
+        return view('employee.edit', compact('employee'));
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
+     * @param  \Illuminate\Http\Request $request
+     * @param  Employee $employee
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Employee $employee)
     {
-        $employee = Employee::findOrFail($id)->update($request->all());
-        return \response("Sea actualizado la informacion del empleado");
+        request()->validate(Employee::$rules);
+
+        $employee->update($request->all());
+
+        return redirect()->route('employees.index')
+            ->with('success', 'Employee updated successfully');
     }
 
     /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param int $id
+     * @return \Illuminate\Http\RedirectResponse
+     * @throws \Exception
      */
     public function destroy($id)
     {
-        $employee = Employee::destroy($id);
-        return \response("El empleado de id $id sea eliminado");
+        $employee = Employee::find($id)->delete();
+
+        return redirect()->route('employees.index')
+            ->with('success', 'Employee deleted successfully');
     }
 }
